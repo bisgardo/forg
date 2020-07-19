@@ -1,40 +1,27 @@
 package forg.treesum;
 
+import com.google.common.hash.HashFunction;
+import com.google.common.io.ByteSource;
+
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.function.BiConsumer;
 
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hashing;
-import com.google.common.io.ByteSource;
-
+@SuppressWarnings("UnstableApiUsage")
 public class TreeSummer {
 	
-	public static void main(String... args) throws IOException {
-		if (args.length != 1) {
-			System.err.println("Takes exactly one argument: directory");
-			System.exit(1);
-		}
-		
-		HashFunction hasher = Hashing.murmur3_128();
-		
-		Path dir = Paths.get(args[0]);
-		if (!Files.isDirectory(dir)) {
-			System.err.println("Not a directory: " + dir.toString());
-			System.exit(1);
-		}
-		
-		Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+	public static Path run(Path dir, HashFunction checksummer, BiConsumer<Path, String> reporter) throws IOException {
+		return Files.walkFileTree(dir, new SimpleFileVisitor<>() {
 			@Override
 			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-				String checksum = checksumOf(file, hasher);
+				String checksum = checksumOf(file, checksummer);
 				
 				// Report checksum.
-				printEntry(file, checksum);
+				reporter.accept(file, checksum);
 				
 				return FileVisitResult.CONTINUE;
 			}
@@ -46,12 +33,8 @@ public class TreeSummer {
 		});
 	}
 	
-	private static String checksumOf(Path file, HashFunction hasher) throws IOException {
+	private static String checksumOf(Path file, HashFunction h) throws IOException {
 		ByteSource bs = com.google.common.io.Files.asByteSource(file.toFile());
-		return bs.hash(hasher).toString();
-	}
-	
-	private static void printEntry(Path file, String checksum) {
-		System.out.println(file.toString() + '\t' + checksum);
+		return bs.hash(h).toString();
 	}
 }

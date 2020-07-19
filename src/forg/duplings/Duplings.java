@@ -37,7 +37,7 @@ public class Duplings {
 			System.out.println(String.join("\t", d.filenames));
 		}
 	}
-
+	
 	private static List<Dupling> resolveSortedDuplicates() throws IOException {
 		// Read mappings from stdin.
 		HashMultimap<String, String> map = HashMultimap.create();
@@ -70,17 +70,10 @@ public class Duplings {
 			
 			duplings.add(new Dupling(checksum, filenamesArray));
 		}
-		Collections.sort(duplings, new Comparator<Dupling>() {
-			@Override
-			public int compare(Dupling left, Dupling right) {
-				int diff = Integer.compare(left.filenames.length, right.filenames.length);
-				if (diff != 0) {
-					return diff;
-				}
-				
-				return left.filenames[0].compareTo(right.filenames[0]);
-			}
-		});
+		duplings.sort(
+				Comparator.comparingInt((Dupling d) -> d.filenames.length)
+						.thenComparing(d -> d.filenames[0])
+		);
 		
 		return duplings;
 	}
